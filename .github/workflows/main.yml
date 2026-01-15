@@ -2,44 +2,24 @@ name: Build APK
 on: [push]
 
 jobs:
-  build-android:
+  build:
     runs-on: ubuntu-latest
 
     steps:
       - uses: actions/checkout@v2
 
-      # 1. تنظيف المساحة (عشان العملية ما تفشلش بسبب الذاكرة)
-      - name: Free Disk Space
-        run: |
-          sudo rm -rf /usr/share/dotnet
-          sudo rm -rf /opt/ghc
-          sudo rm -rf "/usr/local/share/boost"
+      # استخدام "المصنع الجاهز" (Docker) لبناء التطبيق
+      # هذا الحل يتخطى مشاكل التراخيص والأدوات الناقصة
+      - name: Build with Buildozer
+        uses: ArtemSBulgakov/buildozer-action@v1
+        id: buildozer
+        with:
+          command: buildozer android debug
+          buildozer_version: stable
 
-      # 2. تثبيت الأدوات الضرورية (بما فيها الحل لمشكلة التوقف)
-      - name: Install dependencies
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y \
-            build-essential git python3-pip python3-dev ffmpeg \
-            libsdl2-dev libsdl2-image-dev libsdl2-mixer-dev libsdl2-ttf-dev \
-            libportmidi-dev libswscale-dev libavformat-dev libavcodec-dev \
-            zlib1g-dev libffi-dev libssl-dev libtool automake autoconf unzip
-
-      # 3. تثبيت Buildozer
-      - name: Install Buildozer
-        run: |
-          pip3 install --upgrade pip
-          pip3 install buildozer cython==0.29.33
-
-      # 4. بناء التطبيق (هنا التغيير المهم اللي بيضغط Yes أوتوماتيك)
-      - name: Build APK
-        run: |
-          chmod +x main.py
-          yes | buildozer android debug
-
-      # 5. رفع ملف التطبيق عشان تحمله
+      # رفع ملف الـ APK الناتج
       - name: Upload Artifact
         uses: actions/upload-artifact@v4
         with:
-          name: my-doctor-app
+          name: DrSplitterApp
           path: bin/*.apk
